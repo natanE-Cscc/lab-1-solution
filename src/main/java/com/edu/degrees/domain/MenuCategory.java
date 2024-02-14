@@ -56,4 +56,14 @@ public class MenuCategory {
     public void setSortOrder(Integer sortOrder) {
         this.sortOrder = sortOrder;
     }
+
+    @Override
+    public String toString() {
+        return "MenuCategory{" +
+                "id=" + id +
+                ", categoryTitle='" + categoryTitle + '\'' +
+                ", categoryNotes='" + categoryNotes + '\'' +
+                ", sortOrder=" + sortOrder +
+                '}';
+    }
 }

@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.Collections;
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/menu/categories")
 public class DegreesBlogController {
@@ -28,4 +31,39 @@ public class DegreesBlogController {
         headers.add("Location", uriComponents.toUri().toString());
         return new ResponseEntity<>(savedPost, headers, HttpStatus.CREATED);
     }
+    @GetMapping
+    public Iterable<MenuCategory> getCategoryEntries() {
+        return degreesBlogRepository.findAll();
+    }
+    @GetMapping("{id}")
+    public ResponseEntity<Iterable<MenuCategory>> getCategoryByID(@PathVariable Long id) {
+        Optional<MenuCategory> searchResult = degreesBlogRepository.findById(id);
+        if (searchResult.isPresent()) {
+            return new ResponseEntity<>(
+                    Collections.singletonList(searchResult.get()), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+    @PutMapping("{id}")
+    public ResponseEntity<MenuCategory> updateCategoryEntry(@PathVariable Long id,
+                                                            @RequestBody MenuCategory categoryEntry) {
+        if (categoryEntry.getId() != id) {
+            return new ResponseEntity<>(HttpStatus.CONFLICT);
+        }
+        if(degreesBlogRepository.existsById(id)) {
+            degreesBlogRepository.save(categoryEntry);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+    @DeleteMapping("{id}")
+    public ResponseEntity<MenuCategory> deleteCategoryById(@PathVariable Long id) {
+        Optional<MenuCategory> categoryEntry = degreesBlogRepository.findById(id);
+        if(categoryEntry.isPresent()) {
+            degreesBlogRepository.delete(categoryEntry.get());
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
 }
