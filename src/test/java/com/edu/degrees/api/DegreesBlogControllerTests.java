@@ -32,6 +32,7 @@ public class DegreesBlogControllerTests {
     private final ObjectMapper mapper = new ObjectMapper();
     private static final MenuCategory testPosting = new MenuCategory(0L,"categoryTitle", "categoryNotes", 6 );
     private static final MenuCategory savedPosting = new MenuCategory(1L,"categoryTitle", "categoryNotes", 6 );
+   // private static final MenuCategory savedValidPosting = new MenuCategory(0L, null, "categoryValidNotes ", 12);
     @MockBean
     private DegreesBlogRepository degreesBlogRepository;
     @Test
@@ -162,6 +163,39 @@ public class DegreesBlogControllerTests {
         verify(degreesBlogRepository, times(1)).findById(1L);
         verifyNoMoreInteractions(degreesBlogRepository);
     }
+    @Test
+    @DisplayName("T11 - POST returns 400 if required properties are not set")
+    public void testCategory_11(@Autowired MockMvc mockMvc) throws Exception {
+        mockMvc.perform(post(RESOURCE_URI)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(new MenuCategory())))
+                .andExpect(status().isBadRequest());
+        verify(degreesBlogRepository, never()).save(any(MenuCategory.class));
+        verifyNoMoreInteractions(degreesBlogRepository);
+    }
+
+    @Test
+    @DisplayName("T12 - Field errors present for each invalid property")
+    public void test_122(@Autowired MockMvc mockMvc) throws Exception {
+        mockMvc.perform(post(RESOURCE_URI)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(new MenuCategory())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.categoryTitle").value("must not be null"))
+                .andExpect(jsonPath("$.fieldErrors.sortOrder").value("must not be null"));
+        mockMvc.perform(post(RESOURCE_URI)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(new MenuCategory(0L, null, "", 6))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.categoryTitle").value(
+                        "Please enter a category name of up to 200 characters"))
+                //.andExpect(jsonPath("$.fieldErrors.title").value(
+                        //"Please enter a title up to 200 characters in length"))
+                .andExpect(jsonPath("$.fieldErrors.sortOrder")
+                        .value("Content is required"));
+        verify(degreesBlogRepository, never()).save(any(MenuCategory.class));
+    }
+
 
 
 }

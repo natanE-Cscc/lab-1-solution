@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 @Entity
 
@@ -11,8 +13,11 @@ public class MenuCategory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @NotNull
+    @Size(min = 1, max = 80, message = "Please enter a category title up to 80 characters in length")
     private String categoryTitle;
     private String categoryNotes;
+    @NotNull(message = "sortOrder is required")
     private Integer sortOrder;
 
     public MenuCategory(Long id, String categoryTitle, String categoryNotes, Integer sortOrder) {

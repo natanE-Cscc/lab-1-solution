@@ -2,6 +2,7 @@ package com.edu.degrees.api;
 
 import com.edu.degrees.data.DegreesBlogRepository;
 import com.edu.degrees.domain.MenuCategory;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,7 @@ public class DegreesBlogController {
 
     @PostMapping
     public ResponseEntity <MenuCategory> createDegreesEntry(
-            @RequestBody MenuCategory menuCategory, UriComponentsBuilder uriComponentsBuilder) {
+            @Valid @RequestBody MenuCategory menuCategory, UriComponentsBuilder uriComponentsBuilder) {
         MenuCategory savedPost = degreesBlogRepository.save(menuCategory);
         HttpHeaders headers = new HttpHeaders();
       UriComponents uriComponents = uriComponentsBuilder.path("/api/menu/categories/{id}").buildAndExpand(savedPost.getId());
@@ -46,7 +47,7 @@ public class DegreesBlogController {
     }
     @PutMapping("{id}")
     public ResponseEntity<MenuCategory> updateCategoryEntry(@PathVariable Long id,
-                                                            @RequestBody MenuCategory categoryEntry) {
+                                                            @Valid @RequestBody MenuCategory categoryEntry) {
         if (categoryEntry.getId() != id) {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
         }

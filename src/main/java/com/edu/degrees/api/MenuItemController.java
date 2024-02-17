@@ -2,6 +2,7 @@ package com.edu.degrees.api;
 
 import com.edu.degrees.data.MenuItemRepository;
 import com.edu.degrees.domain.MenuItem;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +24,7 @@ public class MenuItemController {
     }
     @PostMapping
     public ResponseEntity<MenuItem> createItemEntry(
-            @RequestBody MenuItem menuItem, UriComponentsBuilder uriComponentsBuilder) {
+            @Valid @RequestBody MenuItem menuItem, UriComponentsBuilder uriComponentsBuilder) {
         MenuItem savedPost = menuItemRepository.save(menuItem);
         HttpHeaders headers = new HttpHeaders();
         UriComponents uriComponents = uriComponentsBuilder.path("/api/menu/items/{id}").buildAndExpand(savedPost.getId());
@@ -45,7 +46,7 @@ public class MenuItemController {
     }
     @PutMapping("{id}")
     public ResponseEntity<MenuItem> updateItemEntry(@PathVariable Long id,
-                                                            @RequestBody MenuItem itemEntry) {
+                                                    @Valid @RequestBody MenuItem itemEntry) {
         if (itemEntry.getId() != id) {
             return new ResponseEntity<>(HttpStatus.CONFLICT);
         }

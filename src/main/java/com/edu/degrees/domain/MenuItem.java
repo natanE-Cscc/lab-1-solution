@@ -1,6 +1,8 @@
 package com.edu.degrees.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 @Entity
 public class MenuItem {
@@ -8,10 +10,16 @@ public class MenuItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @ManyToOne
+    @NotNull(message = "menuCategory is required")
     private MenuCategory menuCategory;
+    @NotNull
+    @Size(min = 1, max = 80, message = "Please enter a name of up to 80 characters")
     private String name;
     private String description;
+    @NotNull
+    @Size(min = 1, max = 20, message = "Please enter a price up to 20 characters")
     private String price;
+    @NotNull(message = "sortOrder is required")
     private Integer sortOrder;
 
     public MenuItem() {

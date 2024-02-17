@@ -1,6 +1,7 @@
 package com.edu.degrees.api;
 
 import com.edu.degrees.data.MenuItemRepository;
+import com.edu.degrees.domain.MenuCategory;
 import com.edu.degrees.domain.MenuItem;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -171,6 +172,42 @@ public class MenuItemControllerTest {
         verify(mockItemRepository, times(1)).delete(refEq(savedPosting));
         verify(mockItemRepository, times(1)).findById(1L);
         verifyNoMoreInteractions(mockItemRepository);
+    }
+    @Test
+    @DisplayName("T11 - POST returns 400 if required properties are not set")
+    public void testItem_11(@Autowired MockMvc mockMvc) throws Exception {
+        mockMvc.perform(post(RESOURCE_URI)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(new MenuItem())))
+                .andExpect(status().isBadRequest());
+        verify(mockItemRepository, never()).save(any(MenuItem.class));
+        verifyNoMoreInteractions(mockItemRepository);
+    }
+
+    @Test
+    @DisplayName("T12 - Field errors present for each invalid property")
+    public void test_122(@Autowired MockMvc mockMvc) throws Exception {
+        mockMvc.perform(post(RESOURCE_URI)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(new MenuItem())))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.menuCategory").value("must not be null"))
+                .andExpect(jsonPath("$.fieldErrors.name").value("must not be null"))
+                .andExpect(jsonPath("$.fieldErrors.price").value("must not be null"))
+                .andExpect(jsonPath("$.fieldErrors.sortOrder").value("must not be null"));
+        mockMvc.perform(post(RESOURCE_URI)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(new MenuItem(0L, null,  " ", " "," ",8))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.menuCategory").value(
+                        "menuCategory is required"))
+                .andExpect(jsonPath("$.fieldErrors.name").value(
+                "Please enter a name of up to 80 characters"))
+                .andExpect(jsonPath("$.fieldErrors.price")
+                        .value("Please enter a price up to 20 characters"))
+                .andExpect(jsonPath("$.fieldErrors.sortOrder")
+                        .value("sortOrder is required"));
+        verify(mockItemRepository, never()).save(any(MenuItem.class));
     }
 
 }
