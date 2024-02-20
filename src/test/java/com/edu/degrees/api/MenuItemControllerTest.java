@@ -30,8 +30,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class MenuItemControllerTest {
     public static final String RESOURCE_URI = "/api/menu/items";
     private final ObjectMapper mapper = new ObjectMapper();
-    private static final MenuItem testPosting = new MenuItem(0L,null, "title", "this is a menu item", "$1", 4);
-   private static final MenuItem savedPosting = new MenuItem(1L,null,"title", "this is a menu item", "$1", 6);
+    public static final MenuCategory menuCategory = new MenuCategory(1L, "category", "notes", 1);
+    private static final MenuItem testPosting = new MenuItem(0L,menuCategory, "title", "this is a menu item", "$1", 4);
+    private static final MenuItem savedPosting = new MenuItem(1L, menuCategory, "title", "this is a menu item", "$1", 6);
     @MockBean
     private MenuItemRepository mockItemRepository;
 
@@ -45,7 +46,7 @@ public class MenuItemControllerTest {
         MvcResult result = mockMvc.perform(post)
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(savedPosting.getId()))
-                .andExpect(jsonPath("$.menuCategory").value(savedPosting.getMenuCategory()))
+                .andExpect(jsonPath("$.menuCategory.id").value(savedPosting.getMenuCategory().getId()))
                 .andExpect(jsonPath("$.name").value(savedPosting.getName()))
                 .andExpect(jsonPath("$.description").value(savedPosting.getDescription()))
                 .andExpect(jsonPath("$.sortOrder").value(savedPosting.getSortOrder().toString()))
@@ -77,7 +78,7 @@ public class MenuItemControllerTest {
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.[0].id").value(savedPosting.getId()))
-                .andExpect(jsonPath("$.[0].menuCategory").value(savedPosting.getMenuCategory()))
+                .andExpect(jsonPath("$.[0].menuCategory.id").value(savedPosting.getMenuCategory().getId()))
                 .andExpect(jsonPath("$.[0].name").value(savedPosting.getName()))
                 .andExpect(jsonPath("$.[0].description").value(savedPosting.getDescription()))
                 .andExpect(jsonPath("$.[0].price").value(savedPosting.getPrice()))
@@ -105,7 +106,7 @@ public class MenuItemControllerTest {
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.[0].id").value(savedPosting.getId()))
-                .andExpect(jsonPath("$.[0].menuCategory").value(savedPosting.getMenuCategory()))
+                .andExpect(jsonPath("$.[0].menuCategory.id").value(savedPosting.getMenuCategory().getId()))
                 .andExpect(jsonPath("$.[0].name").value(savedPosting.getName()))
                 .andExpect(jsonPath("$.[0].description").value(savedPosting.getDescription()))
                 .andExpect(jsonPath("$.[0].price").value(savedPosting.getPrice()))
@@ -121,7 +122,7 @@ public class MenuItemControllerTest {
         mockMvc.perform(put(RESOURCE_URI + "/10")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(
-                                new MenuItem(10L, null,  "titleOne", "this is a put menu test item","$2",8))))
+                                new MenuItem(10L, menuCategory,  "titleOne", "this is a put menu test item","$2",8))))
                 .andExpect(status().isNotFound());
         verify(mockItemRepository, never()).save(any(MenuItem.class));
         verify(mockItemRepository, times(1)).existsById(10L);
@@ -134,7 +135,7 @@ public class MenuItemControllerTest {
         mockMvc.perform(put(RESOURCE_URI + "/10")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(
-                                new MenuItem(10L, null,  "titleOne", "this is a put menu test item","$2",8))))
+                                new MenuItem(10L, menuCategory,  "titleOne", "this is a put menu test item","$2",8))))
                 .andExpect(status().isNoContent());
         verify(mockItemRepository, times(1)).save(any(MenuItem.class));
         verify(mockItemRepository, times(1)).existsById(10L);
@@ -146,7 +147,7 @@ public class MenuItemControllerTest {
         mockMvc.perform(put(RESOURCE_URI + "/100")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(
-                                new MenuItem(10L, null,  "titleOne", "this is a put menu test item","$2",8))))
+                                new MenuItem(10L, menuCategory,  "titleOne", "this is a put menu test item","$2",8))))
                 .andExpect(status().isConflict());
         verify(mockItemRepository, never()).save(any(MenuItem.class));
         verifyNoMoreInteractions(mockItemRepository);
@@ -191,13 +192,13 @@ public class MenuItemControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(new MenuItem())))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.fieldErrors.menuCategory").value("must not be null"))
+                .andExpect(jsonPath("$.fieldErrors.menuCategory").value("menuCategory is required"))
                 .andExpect(jsonPath("$.fieldErrors.name").value("must not be null"))
                 .andExpect(jsonPath("$.fieldErrors.price").value("must not be null"))
-                .andExpect(jsonPath("$.fieldErrors.sortOrder").value("must not be null"));
+                .andExpect(jsonPath("$.fieldErrors.sortOrder").value("sortOrder is required"));
         mockMvc.perform(post(RESOURCE_URI)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(new MenuItem(0L, null,  " ", " "," ",8))))
+                        .content(mapper.writeValueAsString(new MenuItem(0L, null,  "", "","",null))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.menuCategory").value(
                         "menuCategory is required"))
