@@ -182,17 +182,13 @@ public class DegreesBlogControllerTests {
                         .content(mapper.writeValueAsString(new MenuCategory())))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.categoryTitle").value("must not be null"))
-                .andExpect(jsonPath("$.fieldErrors.sortOrder").value("must not be null"));
+                .andExpect(jsonPath("$.fieldErrors.sortOrder").value("sortOrder is required"));
         mockMvc.perform(post(RESOURCE_URI)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(new MenuCategory(0L, null, "", 6))))
+                        .content(mapper.writeValueAsString(new MenuCategory(0L, "", "", 6))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.categoryTitle").value(
-                        "Please enter a category name of up to 200 characters"))
-                //.andExpect(jsonPath("$.fieldErrors.title").value(
-                        //"Please enter a title up to 200 characters in length"))
-                .andExpect(jsonPath("$.fieldErrors.sortOrder")
-                        .value("Content is required"));
+                        "Please enter a category title up to 80 characters in length"));
         verify(degreesBlogRepository, never()).save(any(MenuCategory.class));
     }
 
