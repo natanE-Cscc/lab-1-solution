@@ -135,12 +135,13 @@ public class MenuItemControllerTest {
         mockMvc.perform(put(RESOURCE_URI + "/10")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(
-                                new MenuItem(10L, null,  "titleOne", "this is a put menu test item","$2",8))))
+                                new MenuItem(10L, menuCategory,  "titleOne", "this is a put menu test item","$2",8))))
                 .andExpect(status().isNoContent());
         verify(mockItemRepository, times(1)).save(any(MenuItem.class));
         verify(mockItemRepository, times(1)).existsById(10L);
         verifyNoMoreInteractions(mockItemRepository);
     }
+
     @Test
     @DisplayName("T08 - ID in PUT URL not equal to one in request body")
     public void test_08(@Autowired MockMvc mockMvc) throws Exception {

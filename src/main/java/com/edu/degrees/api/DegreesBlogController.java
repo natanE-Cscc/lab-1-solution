@@ -19,6 +19,7 @@ public class DegreesBlogController {
 
     private final DegreesBlogRepository degreesBlogRepository;
 
+
     public DegreesBlogController(DegreesBlogRepository degreesBlogRepository) {
         this.degreesBlogRepository=degreesBlogRepository;
     }
@@ -36,6 +37,7 @@ public class DegreesBlogController {
     public Iterable<MenuCategory> getCategoryEntries() {
         return degreesBlogRepository.findAll();
     }
+
     @GetMapping("{id}")
     public ResponseEntity<Iterable<MenuCategory>> getCategoryByID(@PathVariable Long id) {
         Optional<MenuCategory> searchResult = degreesBlogRepository.findById(id);

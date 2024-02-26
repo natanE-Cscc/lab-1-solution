@@ -32,9 +32,10 @@ public class DegreesBlogControllerTests {
     private final ObjectMapper mapper = new ObjectMapper();
     private static final MenuCategory testPosting = new MenuCategory(0L,"categoryTitle", "categoryNotes", 6 );
     private static final MenuCategory savedPosting = new MenuCategory(1L,"categoryTitle", "categoryNotes", 6 );
-   // private static final MenuCategory savedValidPosting = new MenuCategory(0L, null, "categoryValidNotes ", 12);
+    // private static final MenuCategory savedValidPosting = new MenuCategory(0L, null, "categoryValidNotes ", 12);
     @MockBean
     private DegreesBlogRepository degreesBlogRepository;
+    //private MenuController menuController;
     @Test
     @DisplayName("Post accepts and  returns degree post representation")
     public void testCategory_01(@Autowired MockMvc mockMvc) throws Exception {
