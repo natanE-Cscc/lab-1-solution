@@ -22,6 +22,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -154,6 +155,44 @@ public class MenuItemControllerTest {
         verifyNoMoreInteractions(mockItemRepository);
     }
     @Test
+    @DisplayName("ST01: PUT without JWT is forbidden")
+    public void sTest022(@Autowired MockMvc mockMvc) throws Exception {
+        when(mockItemRepository.save(any(MenuItem.class))).thenReturn(savedPosting);
+        mockMvc.perform(post(RESOURCE_URI)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(testPosting)))
+                .andExpect(status().isForbidden());
+        verify(mockItemRepository, never()).save(any(MenuItem.class));
+    }
+    @Test
+    @DisplayName("PUT by ID saves to database")
+    void putByIdSavesToDatabase(@Autowired MockMvc mockMvc) throws Exception {
+        when(mockItemRepository.existsById(anyLong())).thenReturn(true);
+        MockHttpServletRequestBuilder putRequest = put(RESOURCE_URI + "/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(
+                        new MenuItem(1L, menuCategory,  "titleOne", "this is a put menu test item","$2",8)));
+        mockMvc.perform(putRequest.with(jwt()))
+                .andExpect(status().isNoContent());
+        verify(mockItemRepository, times(1)).existsById(anyLong());
+        verify(mockItemRepository, times(1)).save(any(MenuItem.class));
+        verifyNoMoreInteractions(mockItemRepository);
+    }
+    @Test
+    @DisplayName("PUT by ID returns not found if not exists")
+    void putByIdReturnsNotFound(@Autowired MockMvc mockMvc) throws Exception {
+        when(mockItemRepository.existsById(anyLong())).thenReturn(false);
+        MockHttpServletRequestBuilder putRequest = put(RESOURCE_URI + "/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(
+                        new MenuItem(1L, menuCategory,  "titleOne", "this is a put menu test item","$2",8)));
+        mockMvc.perform(putRequest.with(jwt()))
+                .andExpect(status().isNotFound());
+
+        verify(mockItemRepository, times(1)).existsById(anyLong());
+        verifyNoMoreInteractions(mockItemRepository);
+    }
+    @Test
     @DisplayName("T09 - Items to be removed does not exist so DELETE returns 404")
     public void test_09(@Autowired MockMvc mockMvc) throws Exception {
         when(mockItemRepository.findById(1L))
@@ -176,6 +215,37 @@ public class MenuItemControllerTest {
         verifyNoMoreInteractions(mockItemRepository);
     }
     @Test
+    @DisplayName("ST03: DELETE without JWT is forbidden")
+    public void sTest03(@Autowired MockMvc mockMvc) throws Exception {
+        when(mockItemRepository.findById(1L))
+                .thenReturn(Optional.of(testPosting));
+        mockMvc.perform(delete(RESOURCE_URI + "/1"))
+                .andExpect(status().isForbidden());
+        verify(mockItemRepository, never()).delete(any(MenuItem.class));
+    }
+    @Test
+    @DisplayName("DELETE by ID deletes from database")
+    void deleteByIdDeletes(@Autowired MockMvc mockMvc) throws Exception {
+        when(mockItemRepository.findById(anyLong())).thenReturn(Optional.of(savedPosting));
+        mockMvc.perform(delete(RESOURCE_URI + "/1").with(jwt()))
+                .andExpect(status().isNoContent());
+
+        verify(mockItemRepository, times(1)).findById(anyLong());
+        verify(mockItemRepository, times(1)).delete(any(MenuItem.class));
+        verifyNoMoreInteractions(mockItemRepository);
+    }
+
+    @Test
+    @DisplayName("DELETE by ID returns not found if not exists")
+    void deleteByIdReturnsNotFound(@Autowired MockMvc mockMvc) throws Exception {
+        when(mockItemRepository.findById(anyLong())).thenReturn(Optional.empty());
+        mockMvc.perform(delete(RESOURCE_URI + "/1").with(jwt()))
+                .andExpect(status().isNotFound());
+
+        verify(mockItemRepository, times(1)).findById(anyLong());
+        verifyNoMoreInteractions(mockItemRepository);
+    }
+    @Test
     @DisplayName("T11 - POST returns 400 if required properties are not set")
     public void testItem_11(@Autowired MockMvc mockMvc) throws Exception {
         mockMvc.perform(post(RESOURCE_URI)
@@ -185,6 +255,44 @@ public class MenuItemControllerTest {
         verify(mockItemRepository, never()).save(any(MenuItem.class));
         verifyNoMoreInteractions(mockItemRepository);
     }
+    @Test
+    @DisplayName("Post returns 400 if required properties are not set")
+    public void postReturns400MissingFieldsItems(@Autowired MockMvc mockMvc) throws Exception {
+        MockHttpServletRequestBuilder post = post(RESOURCE_URI)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(new MenuCategory()));
+        mockMvc.perform(post.with(jwt()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.menuCategory").value("menuCategory is required"))
+                .andExpect(jsonPath("$.fieldErrors.name").value("must not be null"))
+                .andExpect(jsonPath("$.fieldErrors.price").value("must not be null"))
+                .andExpect(jsonPath("$.fieldErrors.sortOrder").value("sortOrder is required"))
+                .andReturn();
+
+        verifyNoInteractions(mockItemRepository);
+    }
+    @Test
+    @DisplayName("Post returns 400 if required properties are not the right length")
+    public void postReturns400ForLength(@Autowired MockMvc mockMvc) throws Exception {
+        MockHttpServletRequestBuilder post = post(RESOURCE_URI)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(new MenuItem(0L, null,  "", "","",null)));
+        mockMvc.perform(post.with(jwt()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.menuCategory").value(
+                        "menuCategory is required"))
+                .andExpect(jsonPath("$.fieldErrors.name").value(
+                        "Please enter a name of up to 80 characters"))
+                .andExpect(jsonPath("$.fieldErrors.price")
+                        .value("Please enter a price up to 20 characters"))
+                .andExpect(jsonPath("$.fieldErrors.sortOrder")
+                        .value("sortOrder is required"))
+                .andReturn();
+
+        verifyNoInteractions(mockItemRepository);
+    }
+
+
 
     @Test
     @DisplayName("T12 - Field errors present for each invalid property")

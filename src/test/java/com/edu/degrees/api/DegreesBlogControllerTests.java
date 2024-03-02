@@ -22,6 +22,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -43,7 +44,7 @@ public class DegreesBlogControllerTests {
         MockHttpServletRequestBuilder post = post(RESOURCE_URI)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(testPosting));
-        MvcResult result = mockMvc.perform(post)
+        MvcResult result = mockMvc.perform(post.with(jwt()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(savedPosting.getId()))
                 .andExpect(jsonPath("$.categoryTitle").value(savedPosting.getCategoryTitle()))
@@ -53,6 +54,17 @@ public class DegreesBlogControllerTests {
         assertEquals(
                 String.format("http://localhost/api/menu/categories/%d", savedPosting.getId()),
                 result.getResponse().getHeader("Location"));
+    }
+    @Test
+    @DisplayName("ST01: POST without JWT is forbidden")
+    public void sTest01(@Autowired MockMvc mockMvc)
+            throws Exception {
+        when(degreesBlogRepository.save(any(MenuCategory.class))).thenReturn(testPosting);
+        mockMvc.perform(post(RESOURCE_URI)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(testPosting)))
+                .andExpect(status().isForbidden());
+        verify(degreesBlogRepository, never()).save(any(MenuCategory.class));
     }
     @Test
     @DisplayName("T02 - When no Category exist, GET returns an empty list")
@@ -143,6 +155,44 @@ public class DegreesBlogControllerTests {
         verifyNoMoreInteractions(degreesBlogRepository);
     }
     @Test
+    @DisplayName("ST02: PUT without JWT is forbidden")
+    public void sTest02(@Autowired MockMvc mockMvc) throws Exception {
+        when(degreesBlogRepository.existsById(anyLong())).thenReturn(true);
+        mockMvc.perform(put(RESOURCE_URI + "/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(testPosting)))
+                .andExpect(status().isForbidden());
+        verify(degreesBlogRepository, never()).save(any(MenuCategory.class));
+    }
+    @Test
+    @DisplayName("PUT by ID saves to database")
+    void putByIdSavesToDatabase(@Autowired MockMvc mockMvc) throws Exception {
+        when(degreesBlogRepository.existsById(anyLong())).thenReturn(true);
+        MockHttpServletRequestBuilder putRequest = put(RESOURCE_URI + "/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(
+                        new MenuCategory(1L,  "categoryTitleTest", "categoryNotesTest",8)));
+        mockMvc.perform(putRequest.with(jwt()))
+                .andExpect(status().isNoContent());
+        verify(degreesBlogRepository, times(1)).existsById(anyLong());
+        verify(degreesBlogRepository, times(1)).save(any(MenuCategory.class));
+        verifyNoMoreInteractions(degreesBlogRepository);
+    }
+    @Test
+    @DisplayName("PUT by ID returns not found if not exists")
+    void putByIdReturnsNotFound(@Autowired MockMvc mockMvc) throws Exception {
+        when(degreesBlogRepository.existsById(anyLong())).thenReturn(false);
+        MockHttpServletRequestBuilder putRequest = put(RESOURCE_URI + "/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(
+                        new MenuCategory(1L,  "categoryTitleTest", "categoryNotesTest",8)));
+        mockMvc.perform(putRequest.with(jwt()))
+                .andExpect(status().isNotFound());
+
+        verify(degreesBlogRepository, times(1)).existsById(anyLong());
+        verifyNoMoreInteractions(degreesBlogRepository);
+    }
+    @Test
     @DisplayName("T09 - Category to be removed does not exist so DELETE returns 404")
     public void testCategory_09(@Autowired MockMvc mockMvc) throws Exception {
         when(degreesBlogRepository.findById(1L))
@@ -165,6 +215,37 @@ public class DegreesBlogControllerTests {
         verifyNoMoreInteractions(degreesBlogRepository);
     }
     @Test
+    @DisplayName("ST03: DELETE without JWT is forbidden")
+    public void sTest03(@Autowired MockMvc mockMvc) throws Exception {
+        when(degreesBlogRepository.findById(1L))
+                .thenReturn(Optional.of(testPosting));
+        mockMvc.perform(delete(RESOURCE_URI + "/1"))
+                .andExpect(status().isForbidden());
+        verify(degreesBlogRepository, never()).delete(any(MenuCategory.class));
+    }
+    @Test
+    @DisplayName("DELETE by ID deletes from database")
+    void deleteByIdDeletes(@Autowired MockMvc mockMvc) throws Exception {
+        when(degreesBlogRepository.findById(anyLong())).thenReturn(Optional.of(savedPosting));
+        mockMvc.perform(delete(RESOURCE_URI + "/1").with(jwt()))
+                .andExpect(status().isNoContent());
+
+        verify(degreesBlogRepository, times(1)).findById(anyLong());
+        verify(degreesBlogRepository, times(1)).delete(any(MenuCategory.class));
+        verifyNoMoreInteractions(degreesBlogRepository);
+    }
+
+    @Test
+    @DisplayName("DELETE by ID returns not found if not exists")
+    void deleteByIdReturnsNotFound(@Autowired MockMvc mockMvc) throws Exception {
+        when(degreesBlogRepository.findById(anyLong())).thenReturn(Optional.empty());
+        mockMvc.perform(delete(RESOURCE_URI + "/1").with(jwt()))
+                .andExpect(status().isNotFound());
+
+        verify(degreesBlogRepository, times(1)).findById(anyLong());
+        verifyNoMoreInteractions(degreesBlogRepository);
+    }
+    @Test
     @DisplayName("T11 - POST returns 400 if required properties are not set")
     public void testCategory_11(@Autowired MockMvc mockMvc) throws Exception {
         mockMvc.perform(post(RESOURCE_URI)
@@ -174,6 +255,38 @@ public class DegreesBlogControllerTests {
         verify(degreesBlogRepository, never()).save(any(MenuCategory.class));
         verifyNoMoreInteractions(degreesBlogRepository);
     }
+    //lab-6 testUpdates
+    @Test
+    @DisplayName("Post returns 400 if required properties are not set")
+    public void postReturns400MissingFields(@Autowired MockMvc mockMvc) throws Exception {
+        MockHttpServletRequestBuilder post = post(RESOURCE_URI)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(new MenuCategory()));
+        mockMvc.perform(post.with(jwt()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.categoryTitle").value("must not be null"))
+                .andExpect(jsonPath("$.fieldErrors.sortOrder").value("sortOrder is required"))
+                .andReturn();
+
+        verifyNoInteractions(degreesBlogRepository);
+    }
+    @Test
+    @DisplayName("Post returns 400 if required properties are not the right length")
+    public void postReturns400ForLength(@Autowired MockMvc mockMvc) throws Exception {
+        MockHttpServletRequestBuilder post = post(RESOURCE_URI)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(new MenuCategory(0L, "", "", 6)));
+        mockMvc.perform(post.with(jwt()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.categoryTitle").value(
+                        "Please enter a category title up to 80 characters in length"))
+                .andReturn();
+
+        verifyNoInteractions(degreesBlogRepository);
+    }
+
+
+
 
     @Test
     @DisplayName("T12 - Field errors present for each invalid property")

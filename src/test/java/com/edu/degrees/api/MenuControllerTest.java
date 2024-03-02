@@ -40,19 +40,20 @@ public class MenuControllerTest {
     private static final String RESOURCE_URI = "/public/api/menus";
     private static final MenuCategory savedPosting = new MenuCategory(1L, "categoryTitle", "categoryNotes", 6);
 
-    @Test
-    @DisplayName("T01 - Get menus categories returns data ")
-    public void test_01(@Autowired MockMvc mockMvc) throws Exception {
-        when(mockRepository.findAllByOrderBySortOrderAscCategoryTitleAsc()).thenReturn(Collections.singletonList(savedPosting));
+@Test
+@DisplayName("T01 - Get menus categories returns data ")
+public void test_01(@Autowired MockMvc mockMvc) throws Exception {
+    when(mockRepository.findAllByOrderBySortOrderAscCategoryTitleAsc()).thenReturn(Collections.singletonList(savedPosting));
 
-        mockMvc.perform(get(RESOURCE_URI))
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+    mockMvc.perform(get(RESOURCE_URI))
+            .andExpect(jsonPath("$.length()").value(1))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk());
 
-        verify(mockRepository, times(1)).findAllByOrderBySortOrderAscCategoryTitleAsc();
-        verifyNoMoreInteractions(mockRepository);
-    }
+    verify(mockRepository, times(1)).findAllByOrderBySortOrderAscCategoryTitleAsc();
+    verifyNoMoreInteractions(mockRepository);
+}
+
 
 }
 
